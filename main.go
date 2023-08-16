@@ -54,7 +54,9 @@ func main() {
 
 	// app.Get("/foo", handleFoo)
 
-	api1v1.Get("/users/:id", userHandler.HandleGetUser)
+	api1v1.Post("/user", userHandler.HandlePostUser)
+	api1v1.Get("/user", userHandler.HandleGetUsers)
+	api1v1.Get("/user/:id", userHandler.HandleGetUser)
 
 	app.Listen(*listenAddr)
 }
