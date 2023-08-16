@@ -31,7 +31,7 @@ func main() {
 	}
 
 	// handlers initialization
-	userHandler := api.NewUserHandler(db.NewMongoUserStore(client))
+	userHandler := api.NewUserHandler(db.NewMongoUserStore(client, db.DBNAME))
 
 	fmt.Println(client)
 	listenAddr := flag.String("listenAddr", ":5000", "Listen address of API server")
@@ -50,13 +50,15 @@ func main() {
 	// fmt.Println(res)
 	fmt.Println("TTTT")
 
-	api1v1 := app.Group("/api/v1")
+	apiv1 := app.Group("/api/v1")
 
 	// app.Get("/foo", handleFoo)
 
-	api1v1.Post("/user", userHandler.HandlePostUser)
-	api1v1.Get("/user", userHandler.HandleGetUsers)
-	api1v1.Get("/user/:id", userHandler.HandleGetUser)
+	apiv1.Post("/user", userHandler.HandlePostUser)
+	apiv1.Get("/user", userHandler.HandleGetUsers)
+	apiv1.Get("/user/:id", userHandler.HandleGetUser)
+	apiv1.Delete("/user/:id", userHandler.HandleDeleteUser)
+	apiv1.Put("/user/:id", userHandler.HandlePutUser)
 
 	app.Listen(*listenAddr)
 }
