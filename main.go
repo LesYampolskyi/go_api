@@ -13,8 +13,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const dbUri = "mongodb://localhost:27017"
-const dbName = "hotel-reservation"
 const userColl = "users"
 
 var config = fiber.Config{
@@ -25,40 +23,45 @@ var config = fiber.Config{
 
 func main() {
 
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(dbUri))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	// handlers initialization
-	userHandler := api.NewUserHandler(db.NewMongoUserStore(client, db.DBNAME))
+	var (
+		hotelStore = db.NewMongoHotelStore(client)
+		roomStore  = db.NewMongoRoomStore(client, hotelStore)
+		userStore  = db.NewMongoUserStore(client)
+		store      = &db.Store{
+			Hotel: hotelStore,
+			Room:  roomStore,
+			User:  userStore,
+		}
+		hotelHandler = api.NewHotelHandle(store)
+		userHandler  = api.NewUserHandler(userStore)
+
+		app   = fiber.New(config)
+		apiv1 = app.Group("/api/v1")
+	)
 
 	fmt.Println(client)
 	listenAddr := flag.String("listenAddr", ":5000", "Listen address of API server")
 	flag.Parse()
-	app := fiber.New(config)
 
-	// user := types.User{
-	// 	FirstName: "ME",
-	// 	LastName:  "MARIO",
-	// }
-	// ctx := context.Background()
-	// res, err := client.Database("hotel-reservation").Collection("users").InsertOne(ctx, user)
 	if err != nil {
 		panic(err)
 	}
-	// fmt.Println(res)
-	fmt.Println("TTTT")
-
-	apiv1 := app.Group("/api/v1")
-
-	// app.Get("/foo", handleFoo)
 
 	apiv1.Post("/user", userHandler.HandlePostUser)
 	apiv1.Get("/user", userHandler.HandleGetUsers)
 	apiv1.Get("/user/:id", userHandler.HandleGetUser)
 	apiv1.Delete("/user/:id", userHandler.HandleDeleteUser)
 	apiv1.Put("/user/:id", userHandler.HandlePutUser)
+
+	apiv1.Get("/hotel", hotelHandler.HandleGetHotels)
+	apiv1.Get("/hotel/:id", hotelHandler.HandleGetHotel)
+	apiv1.Get("/hotel/:id/rooms", hotelHandler.HandleGetRooms)
 
 	app.Listen(*listenAddr)
 }
