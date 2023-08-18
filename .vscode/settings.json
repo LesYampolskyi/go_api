@@ -3,6 +3,8 @@
     "apiv",
     "dbname",
     "encpw",
+    "fname",
+    "lname",
     "testdb",
     "testdburi"
   ]

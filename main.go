@@ -3,6 +3,7 @@ package main
 import (
 	"api/api"
 	"api/db"
+	"api/middleware"
 	"context"
 	"flag"
 	"fmt"
@@ -40,9 +41,11 @@ func main() {
 		}
 		hotelHandler = api.NewHotelHandle(store)
 		userHandler  = api.NewUserHandler(userStore)
+		authHandler  = api.NewAuthHandler(userStore)
 
 		app   = fiber.New(config)
-		apiv1 = app.Group("/api/v1")
+		auth  = app.Group("/api")
+		apiv1 = app.Group("/api/v1", middleware.JWTAuthentication)
 	)
 
 	fmt.Println(client)
@@ -52,13 +55,23 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	// A handler should only do:
+	// 	- serialization of incoming request (JSON)
+	//  - do some data fetching from db
+	//	- call some buisness logic
+	//  - return the data back to the user
 
+	// auth handlers
+	auth.Post("/auth", authHandler.HandleAuthentication)
+
+	// Versioned api route
+	// user handlers
 	apiv1.Post("/user", userHandler.HandlePostUser)
 	apiv1.Get("/user", userHandler.HandleGetUsers)
 	apiv1.Get("/user/:id", userHandler.HandleGetUser)
 	apiv1.Delete("/user/:id", userHandler.HandleDeleteUser)
 	apiv1.Put("/user/:id", userHandler.HandlePutUser)
-
+	// hotel handlers
 	apiv1.Get("/hotel", hotelHandler.HandleGetHotels)
 	apiv1.Get("/hotel/:id", hotelHandler.HandleGetHotel)
 	apiv1.Get("/hotel/:id/rooms", hotelHandler.HandleGetRooms)

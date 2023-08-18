@@ -49,6 +49,11 @@ type User struct {
 	EncryptedPassword string             `bson:"encryptedPassword" json:"-"`
 }
 
+func IsValidPassword(encpw, pw string) bool {
+	return bcrypt.CompareHashAndPassword([]byte(encpw), []byte(pw)) == nil
+
+}
+
 func (params CreateUserParams) Validate() map[string]string {
 	errors := map[string]string{}
 	if len(params.FirstName) < minFirstNameLen {
