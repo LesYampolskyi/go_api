@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"api/db"
 	"fmt"
 	"os"
 	"time"
@@ -9,28 +10,37 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func JWTAuthentication(c *fiber.Ctx) error {
+func JWTAuthentication(userStore db.UserStore) fiber.Handler {
 	fmt.Println("JWT AUTH")
+	return func(c *fiber.Ctx) error {
 
-	token, ok := c.GetReqHeaders()["X-Api-Token"]
-	if !ok {
-		return fmt.Errorf("unauthorized x")
+		token, ok := c.GetReqHeaders()["X-Api-Token"]
+		if !ok {
+			return fmt.Errorf("unauthorized")
+		}
+
+		claims, err := parseToken(token)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println(claims)
+		expiresFloat := claims["expires"].(float64)
+		expires := int64(expiresFloat)
+
+		if time.Now().Unix() > expires {
+			return fmt.Errorf("token expired")
+		}
+
+		userID := claims["id"].(string)
+		user, err := userStore.GetUserByID(c.Context(), userID)
+		if err != nil {
+			return fmt.Errorf("unauthorized")
+		}
+		// Set the current authenticated user to the context
+		c.Context().SetUserValue("user", user)
+		return c.Next()
 	}
-
-	claims, err := parseToken(token)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(claims)
-	expiresFloat := claims["expires"].(float64)
-	expires := int64(expiresFloat)
-
-	if time.Now().Unix() > expires {
-		return fmt.Errorf("token expired")
-	}
-	fmt.Println(expires)
-	return c.Next()
 }
 
 func parseToken(tokenString string) (jwt.MapClaims, error) {

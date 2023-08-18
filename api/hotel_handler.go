@@ -13,7 +13,7 @@ type HotelHandle struct {
 	store *db.Store
 }
 
-func NewHotelHandle(store *db.Store) *HotelHandle {
+func NewHotelHandler(store *db.Store) *HotelHandle {
 	return &HotelHandle{
 		store: store,
 	}
