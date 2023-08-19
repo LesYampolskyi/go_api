@@ -56,7 +56,7 @@ func parseToken(tokenString string) (jwt.MapClaims, error) {
 
 	if err != nil {
 		fmt.Println("failed to parse JWT token: ", err)
-		return nil, fmt.Errorf("unauthorized 2")
+		return nil, fmt.Errorf("unauthorized")
 	}
 
 	if !token.Valid {
@@ -67,7 +67,7 @@ func parseToken(tokenString string) (jwt.MapClaims, error) {
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		fmt.Println(ok)
-		return nil, fmt.Errorf("unauthorized 3")
+		return nil, fmt.Errorf("unauthorized")
 	}
 	fmt.Println("OK")
 	return claims, nil

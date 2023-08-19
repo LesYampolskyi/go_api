@@ -1,10 +1,12 @@
 {
   "cSpell.words": [
     "apiv",
+    "curr",
     "dbname",
     "encpw",
     "fname",
     "lname",
+    "supersecurepassword",
     "testdb",
     "testdburi"
   ]
