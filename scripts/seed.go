@@ -1,90 +1,19 @@
 package main
 
 import (
+	"api/api"
 	"api/db"
-	"api/types"
+	"api/fixture"
 	"context"
 	"fmt"
 	"log"
+	"time"
 
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var (
-	client     *mongo.Client
-	roomStore  db.RoomStore
-	hotelStore db.HotelStore
-	userStore  db.UserStore
-	ctx        = context.Background()
-)
-
-func seedUser(isAdmin bool, fname, lname, email, password string) {
-	user, err := types.NewUserFromParams(types.CreateUserParams{
-		Email:     email,
-		FirstName: fname,
-		LastName:  lname,
-		Password:  password,
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	user.IsAdmin = isAdmin
-	_, err = userStore.InsertUser(context.TODO(), user)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func seedHotel(name, location string, rating int) {
-	hotel := types.Hotel{
-		Name:     name,
-		Location: location,
-		Rooms:    []primitive.ObjectID{},
-		Rating:   rating,
-	}
-
-	rooms := []types.Room{
-		{
-			Size:  "small",
-			Price: 99.9,
-		},
-		{
-			Size:  "normal",
-			Price: 1999.9,
-		},
-		{
-			Size:  "king",
-			Price: 299.9,
-		},
-	}
-
-	insertedHotel, err := hotelStore.Insert(ctx, &hotel)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	for _, room := range rooms {
-		room.HotelID = insertedHotel.ID
-		_, err := roomStore.InsertRoom(ctx, &room)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-	}
-}
-
 func main() {
-	seedHotel("Location1", "hotel1", 3)
-	seedHotel("Location2", "hotel2", 2)
-	seedHotel("Location3", "hotel3", 5)
-	seedUser(false, "John", "Smith", "joe@mail.com", "supersecurepassword")
-	seedUser(true, "Admin", "adm in", "admin@mail.com", "admin")
-}
-
-func init() {
-	fmt.Println("FIRES")
 	ctx := context.Background()
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(db.DBURI))
 	if err != nil {
@@ -94,7 +23,24 @@ func init() {
 		log.Fatal(err)
 	}
 
-	hotelStore = db.NewMongoHotelStore(client)
-	roomStore = db.NewMongoRoomStore(client, hotelStore)
-	userStore = db.NewMongoUserStore(client)
+	hotelStore := db.NewMongoHotelStore(client)
+	store := &db.Store{
+		Room:    db.NewMongoRoomStore(client, hotelStore),
+		User:    db.NewMongoUserStore(client),
+		Booking: db.NewMongoBookingStore(client),
+		Hotel:   db.NewMongoHotelStore(client),
+	}
+
+	userNew := fixture.AddUser(store, "foo", "buz", false)
+	fmt.Println("user -> ", api.CreateTokenFromUser(userNew))
+
+	admin := fixture.AddUser(store, "admin", "admin", true)
+	fmt.Println("admin -> ", api.CreateTokenFromUser(admin))
+
+	hotelItem := fixture.AddHotel(store, "hotel 1", "location 1", 4, nil)
+
+	room := fixture.AddRoom(store, "large", true, 88.44, hotelItem.ID)
+	booking := fixture.AddBooking(store, userNew.ID, room.ID, time.Now(), time.Now().AddDate(0, 0, 5))
+	fmt.Println("booking -> ", booking)
+	return
 }
