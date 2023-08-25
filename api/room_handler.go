@@ -41,7 +41,7 @@ func NewRoomHandler(store *db.Store) *RoomHandle {
 func (h *RoomHandle) HandleGetRooms(c *fiber.Ctx) error {
 	rooms, err := h.store.Room.GetRooms(c.Context(), bson.M{})
 	if err != nil {
-		return err
+		return ErrNoResourceNotFound("rooms")
 	}
 	return c.JSON(rooms)
 }

@@ -2,7 +2,6 @@ package api
 
 import (
 	"api/db"
-	"fmt"
 
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
@@ -29,14 +28,14 @@ func (h *HotelHandle) HandleGetRooms(c *fiber.Ctx) error {
 
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
+		return ErrInvalidID()
 	}
 
 	filter := bson.M{"hotelID": oid}
 
 	rooms, err := h.store.Room.GetRooms(c.Context(), filter)
 	if err != nil {
-		return err
+		return ErrNoResourceNotFound("hotel")
 	}
 	return c.JSON(rooms)
 }
@@ -46,27 +45,27 @@ func (h *HotelHandle) HandleGetHotel(c *fiber.Ctx) error {
 
 	oid, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return err
+		return ErrInvalidID()
 	}
 
 	hotel, err := h.store.Hotel.GetHotelByID(c.Context(), oid)
 	if err != nil {
-		return err
+		return ErrNoResourceNotFound("hotel")
 	}
 	return c.JSON(hotel)
 }
 
 func (h *HotelHandle) HandleGetHotels(c *fiber.Ctx) error {
-	var queryParams HotelQueryParams
-	if err := c.QueryParser(&queryParams); err != nil {
-		return err
-	}
+	// var queryParams HotelQueryParams
+	// if err := c.QueryParser(&queryParams); err != nil {
+	// 	return err
+	// }
 
-	fmt.Println(queryParams)
+	// fmt.Println(queryParams)
 
 	hotels, err := h.store.Hotel.GetHotels(c.Context(), nil)
 	if err != nil {
-		return err
+		return ErrNoResourceNotFound("hotels")
 	}
 	return c.JSON(hotels)
 }

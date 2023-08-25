@@ -2,7 +2,6 @@ package api
 
 import (
 	"api/fixture"
-	"api/middleware"
 	"api/types"
 	"encoding/json"
 	"fmt"
@@ -26,8 +25,8 @@ func TestAdminGetBooking(t *testing.T) {
 		from           = time.Now()
 		till           = time.Now().AddDate(0, 0, 5)
 		booking        = fixture.AddBooking(db.Store, user.ID, room.ID, from, till)
-		app            = fiber.New()
-		route          = app.Group("/", middleware.JWTAuthentication(db.User))
+		app            = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
+		route          = app.Group("/", JWTAuthentication(db.User))
 		bookingHandler = NewBookingHandler(db.Store)
 	)
 
@@ -82,8 +81,8 @@ func TestAdminGetBookings(t *testing.T) {
 		from           = time.Now()
 		till           = time.Now().AddDate(0, 0, 5)
 		booking        = fixture.AddBooking(db.Store, user.ID, room.ID, from, till)
-		app            = fiber.New()
-		admin          = app.Group("/", middleware.JWTAuthentication(db.User), middleware.AdminAuth)
+		app            = fiber.New(fiber.Config{ErrorHandler: ErrorHandler})
+		admin          = app.Group("/", JWTAuthentication(db.User), AdminAuth)
 		bookingHandler = NewBookingHandler(db.Store)
 	)
 
@@ -126,8 +125,8 @@ func TestAdminGetBookings(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if resp.StatusCode == http.StatusOK {
-		t.Fatalf("expected a non 200 status code got %d", resp.StatusCode)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("expected status unauthorized but got %d", resp.StatusCode)
 	}
 
 }

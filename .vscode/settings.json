@@ -9,5 +9,9 @@
     "supersecurepassword",
     "testdb",
     "testdburi"
+  ],
+  "go.testFlags": [
+    "-v",
+    "-count=1"
   ]
 }
